@@ -33,6 +33,20 @@
     </div>
   </div>
   <div class="product-compare"><a href="<?php echo $compare; ?>" id="compare-total"><?php echo $text_compare; ?></a></div>
+  <!-- фильтр категорий блок -->
+<div class="box">
+  <div class="box-heading"><?php echo $this->language->get('text_categories'); ?></div>
+  <div class="box-content">
+    <ul class="box-category">
+      <?php foreach ($categories as $category) { ?>
+      <li>
+        <input type="checkbox" id="category_<?php echo $category['category_id']; ?>" value="<?php echo $category['category_id']; ?>" <?php echo ($filter_category_id == $category['category_id']) ? 'checked="checked"' : ''; ?> onchange="window.location.href='<?php echo ($filter_category_id == $category['category_id']) ? $category['remove_href'] : $category['href'] ; ?>'" />
+        <label for="category_<?php echo $category['category_id']; ?>"><?php echo $category['name']; ?></label>
+      </li>
+      <?php } ?>
+    </ul>
+  </div>
+</div>
   <div class="product-list">
     <?php foreach ($products as $product) { ?>
     <div>

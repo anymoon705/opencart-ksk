@@ -26,4 +26,5 @@ $_['text_rating_desc']  = 'Рейтинг (по убыванию)';
 $_['text_model_asc']    = 'Модель (А -&gt; Я)';
 $_['text_model_desc']   = 'Модель (Я -&gt; А)';
 $_['text_limit']        = 'На странице:';
+$_['text_categories'] = 'Product Categories';
 ?>

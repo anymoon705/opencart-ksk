@@ -1,0 +1,114 @@
+<modification>
+    <version>1.5.6</version>
+    <vqmver>2.6.1</vqmver>
+    <author>Marina</author>
+    <file name="admin/controller/common/header.php">
+        <operation>
+            <search position="after"><![CDATA[
+            $this->data['text_backup'] = $this->language->get('text_backup');
+            ]]></search>
+            <add><![CDATA[
+            // начало модификации
+            $this->data['text_category_filter_on_specials'] = $this->language->get('text_category_filter_on_specials');
+            // конец модификации
+            ]]></add>
+        </operation>
+        <operation>
+            <search position="after"><![CDATA[
+            $this->data['backup'] = $this->url->link('tool/backup', 'token=' . $this->session->data['token'], 'SSL');
+            ]]></search>
+            <add><![CDATA[
+            // начало модификации
+            $this->data['category_filter_on_specials'] = $this->url->link('module/category_filter_on_special', 'token=' . $this->session->data['token'], 'SSL');
+           // конец модификации
+            ]]></add>
+        </operation>
+    </file>
+    <file name="catalog/controller/product/special.php">
+        <operation>
+            <search position="before"><![CDATA[
+            if (isset($this->request->get['sort'])) {
+            ]]></search>
+            <add><![CDATA[
+            // начало модификации
+            $category_id = 0;
+            if (isset($this->request->get['filter_category_id'])) {
+                $category_id = (int)$this->request->get['filter_category_id'];
+            }
+            // конец модификации
+            ]]></add>
+        </operation>
+        <operation>
+            <search position="after"><![CDATA[
+            $results = $this->model_catalog_product->getProductSpecials($data);
+            ]]></search>
+            <add><![CDATA[
+            // начало модификации
+            if ($category_id) {
+                $filter_product_data = array(
+                    'filter_category_id' => $category_id,
+                    'filter_sub_category' => true
+                );
+                $category_products = $this->model_catalog_product->getProducts($filter_product_data);
+                $category_product_ids = array();
+                foreach ($category_products as $product) {
+                    $category_product_ids[] = $product['product_id'];
+                }
+                // Фильтровать продукты по выбранной категории
+                $results = array_filter($results, function($product) use ($category_product_ids) {
+                    return in_array($product['product_id'], $category_product_ids);
+                });
+                $product_total = count($results);
+            }
+            // конец модификации
+            ]]></add>
+        </operation>
+        <operation>
+            <search position="before"><![CDATA[
+            $this->data['sorts'] = array();
+            ]]></search>
+            <add><![CDATA[
+            // начало модификации
+            $product_ids = array_keys($results); //получаем все категории которые относятся к текущему списку продуктов
+            $query = $this->db->query("WITH RECURSIVE category_tree AS (
+    SELECT
+        ptc.category_id as original_category_id,
+        ptc.category_id as category_id,
+        c.parent_id
+    FROM oc_product_to_category ptc
+    JOIN oc_category c ON c.category_id = ptc.category_id and ptc.product_id IN (".implode(', ',$product_ids).")
+
+    UNION ALL
+
+    SELECT
+        ct.original_category_id,
+        c.category_id as category_id,
+        c.parent_id
+    FROM category_tree ct
+    JOIN oc_category c ON c.category_id = ct.parent_id
+)
+SELECT DISTINCT
+    category_id
+FROM category_tree");
+            $query->rows;
+            $this->load->model('catalog/category');
+            $this->data['categories'] = array();
+            $categories_ids = array_column($query->rows, 'category_id'); //да можно добавить разные проверки существование и прочее, но пока так
+            $categories = $this->model_catalog_category->getCategories(0);
+            foreach ($categories as $category) {
+                if (in_array($category['category_id'], $categories_ids)) {
+                    $this->data['categories'][] = array(
+                        'category_id' => $category['category_id'],
+                        'name'        => $category['name'],
+                        'href'        => $this->url->link('product/special', 'filter_category_id=' . $category['category_id']), //забивать в лоб url в целом плохая идея, но для тестового сойдет
+                        'remove_href' => $this->url->link('product/special') // URL при снятии
+                    );
+                }
+            }
+            // Передать идентификатор текущей выбранной категории в шаблон
+            $this->data['filter_category_id'] = $category_id;
+            // конец модификации в теории можно было бы указывать номер задачи
+            ]]></add>
+        </operation>
+    </file>
+</modification>
